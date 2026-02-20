@@ -43,6 +43,7 @@
    #:update-model
    #:obj-prop
    #:object-matrix
+   #:model
    
    ;; scenes
    #:scene

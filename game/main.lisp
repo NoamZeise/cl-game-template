@@ -22,14 +22,22 @@
   (load-model 'cube #p"cube.obj")
   (load-model 'cone #p"cone.obj")
   (load-model 'bunny #p"bunny.obj")
-  (load-image 'uv #p"assets/uv.png"))
+  (load-model 'plane #p"plane.obj")
+  (load-image 'uv #p"assets/uv.png")
+  (add-asset
+   'quad
+   (gficl:make-vertex-data
+    (gficl:make-vertex-form
+     (list (gficl:make-vertex-slot 2 :float)))
+    '(((0 0)) ((1 0)) ((1 1)) ((0 1)))
+    '(0 3 2 2 1 0))))
 
 (defun create-pipelines ()
   (setf *main-pipeline* (make-main-pipeline))
   (resize-callback (gficl:window-width) (gficl:window-height)))
 
 (defun create-scenes ()
-  (setf *scenes* (make-scenes (list) (list (make-street-scene)))))
+  (setf *scenes* (make-scenes (list (make-rects-scene)) (list (make-simple-3d-scene)))))
 
 (defun setup ()
   (init-watched)

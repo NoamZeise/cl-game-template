@@ -14,5 +14,6 @@
 			 ((:file "package")
 			  (:file "constants")
 			  (:file "main")
+			  (:file "object")
 			  (:file "scenes")			  
 			  (:file "pipeline")))))

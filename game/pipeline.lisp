@@ -50,9 +50,8 @@
 
 (defmethod shader-scene-props ((s 2d-shader) (scene scene-2d))
   (with-slots (shader) s
-    (with-slots (view projection) scene
-      (gficl:bind-matrix shader "view" view)
-      (gficl:bind-matrix shader "projection" projection))))
+    (with-slots (view-projection) scene
+      (gficl:bind-matrix shader "view_projection" view-projection))))
 
 (defmethod shader-mesh-props ((s 2d-shader) props)
   (with-slots (shader) s
@@ -60,7 +59,7 @@
 		    (cdr (assoc :colour props)))
     (let ((tex (cdr (assoc :diffuse props))))
       (ecase (car tex)
-	     (:tex (gficl:bind-gl (cdr tex)))
+	     (:tex (gficl:bind-gl (cadr tex)))
 	     (:id (gl:bind-texture :texture-2d (cdr tex)))))))
 
 
@@ -90,7 +89,7 @@
 
 (defmethod draw ((pl main-pipeline) scenes)
   (draw (get-pass pl :3d) (get-scene scenes :3d))
-  ;;(draw (get-pass pl :2d) (get-scene scenes :2d))
+  (draw (get-pass pl :2d) (get-scene scenes :2d))
   (gficl:blit-framebuffers
-   (get-final-framebuffer (get-pass pl :3d)) nil
+   (get-final-framebuffer (get-pass pl :2d)) nil
    (gficl:window-width) (gficl:window-height)))

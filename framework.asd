@@ -9,11 +9,12 @@
 	       :alexandria
 	       :trivial-main-thread
 	       :file-notify
-	       :harmony
+	       ;;:harmony
 	       ;; drain extensions for supporting different audio formats
-	       :cl-mixed-mpg123
-	       #+linux :cl-mixed-pulse
-	       #+windows :cl-mixed-wasapi)
+	       ;:cl-mixed-mpg123
+	       ;#+linux :cl-mixed-pulse
+	       ;#+windows :cl-mixed-wasapi
+	       )
   :components ((:module "framework"
 		:components
 		((:file "package")

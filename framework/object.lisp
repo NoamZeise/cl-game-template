@@ -3,8 +3,8 @@
 (defclass object ()
   ((meshes :initarg :meshes)
    (diffuse-tex :initarg :diffuse)
-   (model :type gficl:matrix)
-   (normal :type gficl:matrix)
+   (model :type gficl:matrix :initarg :model)
+   (normal :type gficl:matrix :initform (gficl:make-matrix))
    (light? :initarg :light :initform nil :type bool)
    (colour :initarg :colour :initform (gficl:make-vec '(1 1 1 1)))))
 

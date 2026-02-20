@@ -1,5 +1,7 @@
 (in-package :game)
 
+;;; Scenes 
+
 (defclass scenes ()
   ((scene-alist :initarg :scenes)))
 
@@ -22,7 +24,7 @@
 (defmethod update ((scenes scenes) dt)
   (foreach-scene scenes (scene) (update-scene scene dt)))
 
-;;; A base 3d scene with basic camera controls and controllable light
+;;; 3d test scene
 
 (defclass camera-scene (scene-3d)
   ((rotating :initform t :type boolean)))
@@ -95,67 +97,32 @@
     (make-object (get-asset 'cube) (object-matrix '(1.5 -0.28 -0.7) '(0.1 0.1 0.1))
 		 :light t))))
 
-;;; street scene
+;;; 2d test scene
 
-(defclass street-scene (camera-scene)
-  ((bunny-x :initform -2)
-   (bunny-z :initform 0.5)))
+(defclass rects-scene (scene-2d)
+  ())
 
-(defun make-street-scene ()  
-  (make-instance
-   'street-scene
-   :cam-pos (gficl:make-vec '(-2 2 2))
-   :cam-target (gficl:-vec '(0 0 0))
-   :light-proj
-   (gficl:orthographic-matrix 16 -12 16 -16 -5 -40)
-   :objects
-   (list
-    (make-object (get-asset 'bunny) (object-matrix '(-2 1 0.5) '(2 2 2)) :light t)
-    (make-object (get-asset 'sphere) (object-matrix '(0.5 1 -7) '(0.4 0.4 0.4)))
-    (make-object (get-asset 'cone) (object-matrix '(0.5 1 1) '(0.8 0.8 0.8)))    )))
+(defun make-rects-scene ()
+  (let ((scene
+	  (make-instance
+	   'rects-scene
+	   :cam-pos (gficl:make-vec '(0 0 0))
+	   :objects
+	   (list (make-2d-object
+		  (make-2d-pos (gficl:make-vec '(10 10)) (gficl:make-vec '(500 500)))
+		  (cons :tex (get-asset 'uv)))))))
+    
+    scene))
 
-(defmethod update-scene ((obj street-scene) dt)
-  (call-next-method)
-  (with-slots (objects bunny-x bunny-z) obj
-    (let ((bunny (car objects)))
-      (gficl:map-keys-down
-       (:h (setf bunny-x (+ bunny-x (* dt))))
-       (:j (setf bunny-x (- bunny-x (* dt))))
-       (:k (setf bunny-z (+ bunny-z (* dt))))
-       (:l (setf bunny-z (- bunny-z (* dt)))))
-      (update-model bunny (object-matrix (list bunny-x 1 bunny-z) '(2 2 2))))))
-
-;;; a scene with a 2d square
-
-(defclass square-scene (scene-2d)
-  ((quad-size :initform 100 :type number)))
-
-(defun make-square-scene ()
-  (make-instance
-   'square-scene
-   :cam-pos (gficl:make-vec '(0 0 0))
-   :objects
-   (list (make-object (get-asset 'plane) (gficl:make-matrix)))))
-
-(defmethod initialize-instance :after ((instance square-scene) &key &allow-other-keys)
-  (update-square-scene-quad
-   (car (slot-value instance 'objects)) (slot-value instance 'quad-size)))
-
-(defun update-square-scene-quad (obj size)
-  (update-model
-   obj (gficl:*mat
-	(gficl:translation-matrix (list size size 0))
-	(gficl:scale-matrix (list size size 1))
-	(gficl:make-matrix-from-data
-	 `((1 0 0 0)
-	   (0 0 1 0)
-	   (0 1 0 0)
-	   (0 0 0 1))))))
-
-(defmethod update-scene ((obj square-scene) dt)
-  (with-slots (objects (size quad-size)) obj
-    (gficl:map-keys-down
-     (:equal (setf size (+ size (* 100 dt)))
-	     (update-square-scene-quad (car objects) size))
-     (:minus (setf size (- size (* 100 dt)))
-	     (update-square-scene-quad (car objects) size)))))
+(defmethod update-scene ((scene rects-scene) dt)
+  (with-slots (cam-pos objects) scene
+    (let ((square (car objects)))
+      (with-slots ((2d-pos pos)) square
+	(with-slots (pos) 2d-pos
+	  (gficl:map-keys-down
+	   (:left (setf cam-pos (gficl:+vec (gficl:*vec dt (gficl:make-vec '(100 0 0))) cam-pos)))
+	   (:right (setf cam-pos (gficl:+vec (gficl:*vec dt (gficl:make-vec '(-100 0 0))) cam-pos)))
+	   (:a (setf pos (gficl:+vec (gficl:*vec dt (gficl:make-vec '(-100 0))) pos)))
+	   (:d (setf pos (gficl:+vec (gficl:*vec dt (gficl:make-vec '(100 0))) pos)))))
+	(update-2d-object-pos square 2d-pos))))
+  (call-next-method))
