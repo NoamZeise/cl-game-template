@@ -1,5 +1,27 @@
 (in-package :game)
 
+(defclass scenes ()
+  ((scene-alist :initarg :scenes)))
+
+(defun make-scenes (2d-scenes 3d-scenes)
+  (make-instance 'scenes
+    :scenes (list (cons :3d 3d-scenes)
+		  (cons :2d 2d-scenes))))
+
+(defun get-scene (scenes key)
+  (cdr (assoc key (slot-value scenes 'scene-alist))))
+
+(defmacro foreach-scene (scenes (scene) fn)
+  (let ((scene-list (gensym)))
+    `(loop for (nil . ,scene-list) in (slot-value ,scenes 'scene-alist) do
+	   (loop for ,scene in ,scene-list do ,fn))))
+
+(defmethod resize ((scenes scenes) w h)
+  (foreach-scene scenes (scene) (resize scene w h)))
+
+(defmethod update ((scenes scenes) dt)
+  (foreach-scene scenes (scene) (update-scene scene dt)))
+
 ;;; A base 3d scene with basic camera controls and controllable light
 
 (defclass camera-scene (scene-3d)
@@ -82,7 +104,7 @@
 (defun make-street-scene ()  
   (make-instance
    'street-scene
-   :cam-pos (gficl:make-vec '(5 9 0))
+   :cam-pos (gficl:make-vec '(-2 2 2))
    :cam-target (gficl:-vec '(0 0 0))
    :light-proj
    (gficl:orthographic-matrix 16 -12 16 -16 -5 -40)
@@ -90,8 +112,7 @@
    (list
     (make-object (get-asset 'bunny) (object-matrix '(-2 1 0.5) '(2 2 2)) :light t)
     (make-object (get-asset 'sphere) (object-matrix '(0.5 1 -7) '(0.4 0.4 0.4)))
-    (make-object (get-asset 'cone) (object-matrix '(0.5 1 14) '(0.8 0.8 0.8)))    
-    (make-object-from-model+tex (get-asset 'street) (object-matrix '(0 -1 2) '(0.5 0.5 0.5))))))
+    (make-object (get-asset 'cone) (object-matrix '(0.5 1 1) '(0.8 0.8 0.8)))    )))
 
 (defmethod update-scene ((obj street-scene) dt)
   (call-next-method)

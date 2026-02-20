@@ -12,7 +12,7 @@
 	   :components ((:module "game"
 			 :components
 			 ((:file "package")
+			  (:file "constants")
 			  (:file "main")
-			  (:file "general-shaders")
 			  (:file "scenes")			  
 			  (:file "pipeline")))))

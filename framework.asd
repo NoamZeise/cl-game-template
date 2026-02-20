@@ -8,7 +8,12 @@
 	       :gficl/load
 	       :alexandria
 	       :trivial-main-thread
-	       :file-notify)
+	       :file-notify
+	       :harmony
+	       ;; drain extensions for supporting different audio formats
+	       :cl-mixed-mpg123
+	       #+linux :cl-mixed-pulse
+	       #+windows :cl-mixed-wasapi)
   :components ((:module "framework"
 		:components
 		((:file "package")

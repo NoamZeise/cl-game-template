@@ -22,27 +22,75 @@
 
 ;;; colour pass
 
-(defclass pbr-colour-pass (pass) ())
+(defclass pbr-pass (pass) ())
 
-(defun make-pbr-colour-pass ()
-  (make-instance 'pbr-colour-pass
+(defun make-pbr-pass ()
+  (make-instance 'pbr-pass
      :shaders (list (make-instance 'pbr-shader))
      :description
      (make-framebuffer-description
       (list (gficl:make-attachment-description :type :texture)
 	    (gficl:make-attachment-description :position :depth-attachment))
-      :samples 16)))
+      :samples (gficl:msaa-samples +msaa-samples+))))
 
-;;; pipeline
+;; shader for 2d quads
 
-(defclass pbr-pipeline (pipeline) ())
+(defclass 2d-shader (shader) ())
 
-(defun make-pbr-pipeline ()
-  (make-instance 'pbr-pipeline
-    :passes (list (cons :col (make-pbr-colour-pass)))))
+(defmethod reload ((s 2d-shader))
+  (shader-reload-files (s (#p"2d.vs" #p"2d.fs") :folder (shader-subfolder #p"2d/")) shader
+    (gl:uniformi (gficl:shader-loc shader "tex") 0)))
 
-(defmethod draw ((pl pbr-pipeline) scenes)
-  (draw (get-pass pl :col) scenes)
+(defmethod draw ((s 2d-shader) scene)
+  (gl:enable :depth-test :blend :cull-face)
+  (gl:front-face :cw)
+  (gl:blend-func :src-alpha :one-minus-src-alpha)
+  (gl:active-texture :texture0)
+  (call-next-method))
+
+(defmethod shader-scene-props ((s 2d-shader) (scene scene-2d))
+  (with-slots (shader) s
+    (with-slots (view projection) scene
+      (gficl:bind-matrix shader "view" view)
+      (gficl:bind-matrix shader "projection" projection))))
+
+(defmethod shader-mesh-props ((s 2d-shader) props)
+  (with-slots (shader) s
+    (gficl:bind-vec shader "obj_colour"
+		    (cdr (assoc :colour props)))
+    (let ((tex (cdr (assoc :diffuse props))))
+      (ecase (car tex)
+	     (:tex (gficl:bind-gl (cdr tex)))
+	     (:id (gl:bind-texture :texture-2d (cdr tex)))))))
+
+
+;; 2d pass
+
+(defclass 2d-pass (pass) ())
+
+(defun make-2d-pass ()
+  (make-instance
+   '2d-pass
+   :shaders
+   (list (make-instance '2d-shader))
+   :description
+   (make-framebuffer-description
+    (list (gficl:make-attachment-description :type :texture)
+	  (gficl:make-attachment-description :position :depth-attachment)))
+   :samples (gficl:msaa-samples +msaa-samples+)))
+
+;;; main pipeline
+
+(defclass main-pipeline (pipeline) ())
+
+(defun make-main-pipeline ()
+  (make-instance 'main-pipeline
+    :passes (list (cons :3d (make-pbr-pass))
+		  (cons :2d (make-2d-pass)))))
+
+(defmethod draw ((pl main-pipeline) scenes)
+  (draw (get-pass pl :3d) (get-scene scenes :3d))
+  ;;(draw (get-pass pl :2d) (get-scene scenes :2d))
   (gficl:blit-framebuffers
-   (get-final-framebuffer (get-pass pl :col)) nil
+   (get-final-framebuffer (get-pass pl :3d)) nil
    (gficl:window-width) (gficl:window-height)))
