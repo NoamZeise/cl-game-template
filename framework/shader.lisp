@@ -66,8 +66,8 @@ Uses GFICL/LOAD:COMPUTE-SHADER to load the shader."
     ,shader-var ,@body))
 
 (defmethod shader-model-props ((obj shader) props)
-	   (gficl:bind-matrix (slot-value obj 'shader) "model"
-			      (cdr (assoc :model props))))
+  (gficl:bind-matrix (slot-value obj 'shader) "model"
+    (cdr (assoc :model props))))
 
 (defmethod shader-mesh-props ((obj shader) props))
 

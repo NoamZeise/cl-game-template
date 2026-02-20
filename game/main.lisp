@@ -33,11 +33,12 @@
     '(0 3 2 2 1 0))))
 
 (defun create-pipelines ()
-  (setf *main-pipeline* (make-main-pipeline))
+  (setf *main-pipeline* (make-main-pipeline 500 500))
   (resize-callback (gficl:window-width) (gficl:window-height)))
 
 (defun create-scenes ()
-  (setf *scenes* (make-scenes (list (make-rects-scene)) (list (make-simple-3d-scene)))))
+  (setf *scenes* (make-scenes (list (make-rects-scene)) (list (make-simple-3d-scene))))
+  (resize *scenes* 500 500))
 
 (defun setup ()
   (init-watched)
@@ -58,7 +59,7 @@
   (cleanup-assets))
 
 (defun resize-callback (w h)
-  (resize *scenes* w h)
+  ;;(resize *scenes* w h)
   (resize *main-pipeline* w h))
 
 (defun update-step ()

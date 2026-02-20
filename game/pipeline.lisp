@@ -5,7 +5,7 @@
 (defclass pbr-shader (normals-cam-shader) ())
 
 (defmethod reload ((s pbr-shader))
-  (shader-reload-files (s (#p"standard.vs" #p"pbr.fs")) shader
+  (shader-reload-files (s (#p"standard.vs" #p"pbr.fs") :folder (shader-subfolder #p"3d/")) shader
     (gl:uniformi (gficl:shader-loc shader "tex") 0)))
 
 (defmethod draw ((obj pbr-shader) scene)
@@ -78,18 +78,53 @@
 	  (gficl:make-attachment-description :position :depth-attachment)))
    :samples (gficl:msaa-samples +msaa-samples+)))
 
+;;; post scene / shader
+
+(defclass main-post-scene (post-scene)
+  ())
+
+(defclass main-post-shader (post-shader) ())
+
+(defmethod reload ((s main-post-shader))
+  (shader-reload-files (s (#p"post.vs" #p"post.fs") :folder (shader-subfolder #p"post/")) shader
+    (gl:uniformi (gficl:shader-loc shader "screen_tex") 0)))
+
+(defmethod shader-scene-props ((s main-post-shader) (scene post-scene))
+  (with-slots (shader) s
+    (gl:clear-color 0 0 0 0)
+    (gl:bind-framebuffer :framebuffer 0)
+    (gl:viewport 0 0 (gficl:window-width) (gficl:window-height))
+    (gl:disable :multisample :depth-test :cull-face)
+    (gl:clear :color-buffer-bit)
+    (gficl:bind-matrix shader "transform" (transform scene))
+    (gl:active-texture :texture0)
+    (gl:bind-texture :texture-2d (get-post-tex scene :3d :color-attachment0))))
+
 ;;; main pipeline
 
-(defclass main-pipeline (pipeline) ())
+(defclass main-pipeline (pipeline)
+  ((post-scene :initarg :post-scene :type main-post-scene)))
 
-(defun make-main-pipeline ()
-  (make-instance 'main-pipeline
-    :passes (list (cons :3d (make-pbr-pass))
-		  (cons :2d (make-2d-pass)))))
+(defun make-main-pipeline (target-w target-h)
+  (let ((3d-pass (make-pbr-pass))
+	(2d-pass (make-2d-pass))
+	(post-scene (make-instance 'main-post-scene
+				   :target-width target-w
+				   :target-height target-h)))
+    (resize 3d-pass target-w target-h)
+    (resize 2d-pass target-w target-h)
+    (set-post-texs post-scene (list (cons :2d (get-textures 2d-pass))
+				    (cons :3d (get-textures 3d-pass))))
+    (make-instance 'main-pipeline
+		   :passes (list (cons :3d 3d-pass)
+				 (cons :2d 2d-pass))
+		   :shaders (list (cons :post (make-instance 'main-post-shader)))
+		   :post-scene post-scene)))
+
+(defmethod resize ((pl main-pipeline) w h)
+  (resize (slot-value pl 'post-scene) w h))
 
 (defmethod draw ((pl main-pipeline) scenes)
   (draw (get-pass pl :3d) (get-scene scenes :3d))
   (draw (get-pass pl :2d) (get-scene scenes :2d))
-  (gficl:blit-framebuffers
-   (get-final-framebuffer (get-pass pl :2d)) nil
-   (gficl:window-width) (gficl:window-height)))
+  (draw (get-shader pl :post) (slot-value pl 'post-scene)))
